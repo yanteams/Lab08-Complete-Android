@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import android.Manifest;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -42,6 +43,46 @@ public class MainActivity extends AppCompatActivity {
             editor.putString("note", noteInput);
             editor.apply(); //Update data don't return anything
             //editor.commit(); //Update data return:True/False
+
+            // Write to internal storage
+            File file = new File(getFilesDir(), "YourNote.txt");
+            FileOutputStream fOut = null;
+            try {
+                fOut = new FileOutputStream(file);
+                fOut.write(noteInput.getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (fOut != null) {
+                    try {
+                        fOut.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            // Write to external storage if SD card is available
+            if (isExternalStorageWritable()) {
+                File directory = Environment.getExternalStorageDirectory();
+                File externalFile = new File(directory, "YourNote.txt");
+
+                fOut = null;
+                try {
+                    fOut = new FileOutputStream(externalFile);
+                    fOut.write(noteInput.getBytes());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (fOut != null) {
+                        try {
+                            fOut.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
         });
 
         bt_read.setOnClickListener(view -> {
@@ -50,16 +91,9 @@ public class MainActivity extends AppCompatActivity {
             et_result.setText(noteContent);
         });
 
-        String note = "This is my note.";
         bt_saveDB = findViewById(R.id.buttonSaveDB); // Move the initialization here
 
-        if (isExternalStorageWritable()) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                writeToFileOnExternalStorage(note);
-            } else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE_WRITE_EXTERNAL_STORAGE);
-            }
-        }
+
 
         bt_saveDB.setOnClickListener(view -> {
             String noteInput = et_input.getText().toString();
